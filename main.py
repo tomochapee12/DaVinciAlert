@@ -10,7 +10,7 @@ MAX_BODY_LENGTH = 400
 
 def scrape_news():
     """
-    Fate/GO ニュース一覧ページから最新ニュースを取得
+    FGOニュース一覧ページから最新ニュースを取得
     """
     url = "https://news.fate-go.jp/"
     response = requests.get(url)
@@ -57,7 +57,6 @@ def get_article_content(article_url):
             src = f"https://news.fate-go.jp/{src.lstrip('/')}"
         banner_url = src
 
-    # 全テキストを改行区切りで取り、最初の2行（日付とタイトル）を除去
     raw_text = article.get_text(separator='\n', strip=True)
     lines = raw_text.split('\n')
     body_lines = lines[2:] if len(lines) > 2 else lines
@@ -67,7 +66,9 @@ def get_article_content(article_url):
 
 
 def check_new_news(news_list):
-    """ 未通知のニュースを取得し、ステートを更新 """
+    """ 
+    未通知のニュースを取得し、ステートを更新
+    """
     try:
         with open('last_checked.txt', 'r', encoding='utf-8') as f:
             last = json.load(f)
@@ -88,51 +89,34 @@ def check_new_news(news_list):
 
 
 def send_to_discord(news_list):
-    """ Discord にまとめて通知 (テキスト + 画像をファイルとして送信) """
+    """ 
+    Discord にまとめて通知
+    """
     webhook_url = os.getenv('DISCORD_WEBHOOK')
     if not webhook_url:
         print("[ERROR] DISCORD_WEBHOOK が設定されていません")
-        return False
+        return
 
     for news in reversed(news_list):
-        # 本文の長さ制限
         body = news['content']
         if len(body) > MAX_BODY_LENGTH:
-            body = body[:MAX_BODY_LENGTH] + "(以下省略)"
+            body = body[:MAX_BODY_LENGTH] + '(以下省略)'
 
-        # テキストメッセージ送信
-        text_payload = {
-            'content': (
-                f"## {news['title']}\n"
-                f"**掲載日**: {news['date']}\n"
-                f"{body}\n"
-                f"詳細: <{news['url']}>"
-            ),
-            'allowed_mentions': {'parse': []}
-        }
-        resp_text = requests.post(webhook_url, json=text_payload)
-        if not resp_text.ok:
-            print(f"[ERROR] Discord テキスト通知失敗: {resp_text.status_code} {resp_text.text}")
+        msg = (
+            f"## {news['title']}\n"
+            f"**掲載日**: {news['date']}\n"
+            f"{body}\n"
+            f"詳細: <{news['url']}>"
+        )
+        requests.post(webhook_url, json={'content': msg, 'allowed_mentions': {'parse': []}})
 
-        # 画像をファイルとして送信（リンクではなく直接投稿）
-        banner_url = news.get('banner')
-        if banner_url:
-            img_resp = requests.get(banner_url)
-            if img_resp.ok:
-                # Discord multipart の場合、payload_json でメタ情報を渡す
-                payload_json = {'allowed_mentions': {'parse': []}}
-                files = {'file': ('banner.png', img_resp.content)}
-                resp_img = requests.post(
-                    webhook_url,
-                    files=files,
-                    data={'payload_json': json.dumps(payload_json)}
-                )
-                if not resp_img.ok:
-                    print(f"[ERROR] Discord 画像通知失敗: {resp_img.status_code} {resp_img.text}")
-            else:
-                print(f"[ERROR] バナー画像取得失敗: {img_resp.status_code}")
+        if news['banner']:
+            img_data = requests.get(news['banner']).content
+            files = {'file': ('banner.png', img_data)}
+            data = {'payload_json': json.dumps({'allowed_mentions': {'parse': []}})}
+            requests.post(webhook_url, files=files, data=data)
 
-    return True
+
 
 
 if __name__ == '__main__':
