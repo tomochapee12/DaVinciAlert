@@ -2,7 +2,10 @@ name: FGO News Checker
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # 3時間ごとにUTCで実行
+    - cron: '0 15,18,21 * * *'
+    - cron: '0 0,3,6,9,12 * * *'
+    - cron: '0,10,20 9 * * *'
+
   workflow_dispatch:
 
 jobs:
