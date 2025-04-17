@@ -1,0 +1,40 @@
+name: FGO News Checker
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # 3時間ごとにUTCで実行
+  workflow_dispatch:
+
+jobs:
+  check-news:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Cache news state
+        uses: actions/cache@v3
+        with:
+          path: last_checked.txt
+          key: news-state
+          
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      - name: Run checker
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python main.py
+        
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add last_checked.txt
+          git commit -m "Update last checked news" || true
+          git push
