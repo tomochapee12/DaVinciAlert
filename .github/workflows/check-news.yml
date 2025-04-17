@@ -1,5 +1,8 @@
 name: FGO News Checker
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: '0 15,18,21 * * *'
