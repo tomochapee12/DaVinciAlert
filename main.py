@@ -130,7 +130,11 @@ def send_to_discord(news_list):
 
 
 if __name__ == '__main__':
+    print("[DEBUG] ニュースを取得します")
     all_news = scrape_news()
     new_news = check_new_news(all_news)
+    print(f"[DEBUG] 新着ニュース件数: {len(new_news)}")
     if new_news:
         send_to_discord(new_news)
+    else:
+        print("[DEBUG] 新着ニュースはありません")
