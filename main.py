@@ -89,9 +89,6 @@ def check_new_news(news_list):
 
 
 def send_to_discord(news_list):
-    """ 
-    Discord にまとめて通知
-    """
     webhook_url = os.getenv('DISCORD_WEBHOOK')
     if not webhook_url:
         print("[ERROR] DISCORD_WEBHOOK が設定されていません")
@@ -108,15 +105,23 @@ def send_to_discord(news_list):
             f"{body}\n"
             f"詳細: <{news['url']}>"
         )
-        requests.post(webhook_url, json={'content': msg, 'allowed_mentions': {'parse': []}})
+
+        print(f"[DEBUG] 送信内容:\n{msg}\n")
+
+        resp = requests.post(webhook_url, json={'content': msg, 'allowed_mentions': {'parse': []}})
+        if resp.status_code != 204:
+            print(f"[ERROR] メッセージ送信失敗: {resp.status_code}, {resp.text}")
 
         if news['banner']:
-            img_data = requests.get(news['banner']).content
-            files = {'file': ('banner.png', img_data)}
-            data = {'payload_json': json.dumps({'allowed_mentions': {'parse': []}})}
-            requests.post(webhook_url, files=files, data=data)
-
-
+            try:
+                img_data = requests.get(news['banner']).content
+                files = {'file': ('banner.png', img_data)}
+                data = {'payload_json': json.dumps({'allowed_mentions': {'parse': []}})}
+                resp_img = requests.post(webhook_url, files=files, data=data)
+                if resp_img.status_code != 204:
+                    print(f"[ERROR] 画像送信失敗: {resp_img.status_code}, {resp_img.text}")
+            except Exception as e:
+                print(f"[ERROR] 画像取得または送信で例外: {e}")
 
 
 if __name__ == '__main__':
