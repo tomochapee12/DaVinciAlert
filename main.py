@@ -74,12 +74,16 @@ def check_new_news(news_list):
             last = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         last = {'date': '', 'title': ''}
+        
+    print(f"[DEBUG] last_checked.txt の内容: {last}")
 
     new_news = []
     for news in news_list:
         if news['date'] == last.get('date') and news['title'] == last.get('title'):
             break
         new_news.append(news)
+
+    print(f"[DEBUG] 新着ニュース件数: {len(new_news)}")
 
     if new_news:
         with open('last_checked.txt', 'w', encoding='utf-8') as f:
