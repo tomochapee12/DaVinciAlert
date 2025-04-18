@@ -73,20 +73,23 @@ def check_new_news(news_list):
         with open('last_checked.txt', 'r', encoding='utf-8') as f:
             last = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        last = {'date': '', 'title': ''}
+        print("[DEBUG] last_checked.txt が存在しないか空です。全件通知対象とします。")
+        # ファイルがない/壊れている場合は全件通知
+        new_news = news_list
+    else:
+        # すでに通知済みの最新ニュースまでを new_news として抽出
+        new_news = []
+        for news in news_list:
+            if news['date'] == last.get('date') and news['title'] == last.get('title'):
+                break
+            new_news.append(news)
 
-    new_news = []
-    for news in news_list:
-        if news['date'] == last.get('date') and news['title'] == last.get('title'):
-            break
-        new_news.append(news)
-
+    # 新しいニュースがあればステートファイルを更新
     if new_news:
         with open('last_checked.txt', 'w', encoding='utf-8') as f:
             json.dump({'date': new_news[0]['date'], 'title': new_news[0]['title']}, f, ensure_ascii=False)
 
     return new_news
-
 
 def send_to_discord(news_list):
     webhook_url = os.getenv('DISCORD_WEBHOOK')
