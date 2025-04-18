@@ -73,31 +73,29 @@ def check_new_news(news_list):
         with open('last_checked.txt', 'r', encoding='utf-8') as f:
             last = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        print("[DEBUG] last_checked.txt が存在しないか空です。全件通知対象とします。")
-        # ファイルがない/壊れている場合は全件通知
-        new_news = news_list
-    else:
-        # すでに通知済みの最新ニュースまでを new_news として抽出
-        new_news = []
-        for news in news_list:
-            if news['date'] == last.get('date') and news['title'] == last.get('title'):
-                break
-            new_news.append(news)
+        last = {'date': '', 'title': ''}
 
-    # 新しいニュースがあればステートファイルを更新
+    new_news = []
+    for news in news_list:
+        if news['date'] == last.get('date') and news['title'] == last.get('title'):
+            break
+        new_news.append(news)
+
     if new_news:
         with open('last_checked.txt', 'w', encoding='utf-8') as f:
             json.dump({'date': new_news[0]['date'], 'title': new_news[0]['title']}, f, ensure_ascii=False)
 
     return new_news
 
+
 def send_to_discord(news_list):
+    """ 
+    Discord にまとめて通知
+    """
     webhook_url = os.getenv('DISCORD_WEBHOOK')
     if not webhook_url:
         print("[ERROR] DISCORD_WEBHOOK が設定されていません")
         return
-    else:
-        print("[DEBUG] Webhook URL は設定されています")
 
     for news in reversed(news_list):
         body = news['content']
@@ -110,34 +108,19 @@ def send_to_discord(news_list):
             f"{body}\n"
             f"詳細: <{news['url']}>"
         )
-
-        print(f"[DEBUG] 送信内容:\n{msg}")
-
-        resp = requests.post(webhook_url, json={'content': msg, 'allowed_mentions': {'parse': []}})
-        print(f"[DEBUG] テキスト送信ステータス: {resp.status_code}")
-        if resp.status_code != 204:
-            print(f"[ERROR] テキスト送信失敗: {resp.status_code}, {resp.text}")
+        requests.post(webhook_url, json={'content': msg, 'allowed_mentions': {'parse': []}})
 
         if news['banner']:
-            try:
-                img_data = requests.get(news['banner']).content
-                files = {'file': ('banner.png', img_data)}
-                data = {'payload_json': json.dumps({'allowed_mentions': {'parse': []}})}
-                resp_img = requests.post(webhook_url, files=files, data=data)
-                print(f"[DEBUG] 画像送信ステータス: {resp_img.status_code}")
-                if resp_img.status_code != 204:
-                    print(f"[ERROR] 画像送信失敗: {resp_img.status_code}, {resp_img.text}")
-            except Exception as e:
-                print(f"[ERROR] 画像取得または送信で例外: {e}")
+            img_data = requests.get(news['banner']).content
+            files = {'file': ('banner.png', img_data)}
+            data = {'payload_json': json.dumps({'allowed_mentions': {'parse': []}})}
+            requests.post(webhook_url, files=files, data=data)
+
 
 
 
 if __name__ == '__main__':
-    print("[DEBUG] ニュースを取得します")
     all_news = scrape_news()
     new_news = check_new_news(all_news)
-    print(f"[DEBUG] 新着ニュース件数: {len(new_news)}")
     if new_news:
         send_to_discord(new_news)
-    else:
-        print("[DEBUG] 新着ニュースはありません")
