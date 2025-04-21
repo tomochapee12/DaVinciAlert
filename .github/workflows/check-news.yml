@@ -14,20 +14,13 @@ on:
 jobs:
   check-news:
     runs-on: ubuntu-latest
-    
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-          
-      - name: Cache news state
-        uses: actions/cache@v3
-        with:
-          path: last_checked.txt
-          key: news-state
           
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -44,3 +37,4 @@ jobs:
           git add last_checked.txt
           git commit -m "Update last checked news" || true
           git push
+
