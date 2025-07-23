@@ -1,1 +1,1 @@
-{"date": "2025.07.23", "title": "【期間限定】『「Fate/Grand Order Fes. 2025 ～10th Anniversary～」カウントダウンキャンペーン』開催！"}
+{"date": "2025.07.23", "title": "【重要】iOSおよびiPadOS 26 Betaでの動作について"}
