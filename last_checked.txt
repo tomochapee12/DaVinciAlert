@@ -1,1 +1,1 @@
-{"date": "2026.09.10", "title": "Fate/Grand Orderお助けTIPS集(9/10 13:00掲載)"}
+{"date": "2026.09.10", "title": "【重要】iOS 27およびiPadOS 27での動作について"}
